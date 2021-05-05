@@ -1,32 +1,12 @@
 This is the project for automated scoring articles.
 
-##打分思路
-    1、两阶段学习策略，第一阶段中利用lstm得到semantic score (basic score), coherence score 和 prompt relevant score,
-    2、第二阶段利用第一阶段中学到的几个score 和 文章的人工特征进行拼接，基于xgboost进行进一步学习
-    详细打分参考论文地址: https://arxiv.org/abs/1901.07744
+##Scoring ideas 1. Two-stage learning strategy. In the first stage, use lstm to get the semantic score (basic score), coherence score and prompt relevant score, 2. In the second stage, use several scores and articles learned in the first stage Artificial features are spliced, and further learning is based on xgboost. Refer to the paper address for detailed scoring: https://arxiv.org/abs/1901.07744
 
-##文件介绍
-    1、score.py: semantic score, coherence score, prompt relevant score 和 overall score的训练和测试相关内容 
-    2、util.py: 项目中需要的一些工具类函数，包括读取训练数据到标准格式（tfrecord, xgboost的训练numpy,）， Document类，封装gec的结果。
-    3、bert: bert-as-service比较老的版本的。。用来read tfrecord，
-    4、config: 模型训练，推理，存储路径所用的参数配置文件
-    5、server: service模块。暴露对外的接口
+##File introduction 1. score.py: semantic score, coherence score, prompt relevant score and overall score training and testing related content 2. util.py: some tool functions needed in the project, including reading training data to the standard Format (tfrecord, xgboost training numpy,), Document class, encapsulate the result of gec. 3. bert: The older version of bert-as-service. . Used to read tfrecord, 4. config: model training, inference, storage path parameter configuration file 5. server: service module. Expose the external interface
 
-##训练
-    1、python3.5 score.py -model bsp #训练basic score模型
-    2、python3.5 score.py -model csp #训练coherence score模型
-    3、python3.5 score.py -model psp #训练prompt relevant score模型
-    4、python3.5 score.py -model osp #训练overall score模型
-    (训练或者测试的时候，需要提前在config/* 下面的相关配置文件中进行配置)
-    
-##准备工作
-    本项目使用tensorflow serving进行服务，tensorflow serving使用如下所示（以basic_score模型为例）：    
-    1、docker pull tensorflow/serving
-    2、sudo docker run -p 8500:8500 -p 8501:8501 --name bsp_container -v /data/liujiawei/eilts_score/basic_score/SavedModel:/models/bsp -e MODEL_NAME=bsp -t tensorflow/serving &
-    实际运行需要load三个tensorflow serving 服务，分别启用basic score, coherence score 和 prompt-relevant score的服务
-    3、查看启动的tensorflow serving服务有没有成功: curl http://127.0.0.1:8501/v1/models/bsp (以bsp模型为例)
-    4、启动bert-as-service第三方项目，做encoding.
+##Train 1, python3.5 score.py -model bsp #train basic score model 2, python3.5 score.py -model csp #train coherence score model 3, python3.5 score.py -model psp #train prompt relevant score model 4, python3.5 score.py -model osp #training the overall score model (when training or testing, you need to configure it in the relevant configuration file under config/* in advance)
 
-##外部调用：
-    外部项目通过grpc对本项目请求服务，当外部发送请求，本项目将请求中的文章分别发送到上述三个tensorflow serving服务中，将返回的结果与手工
-    特征进行拼接，利用预先训练的xgboost模型求解最终的
+##Preparation work This project uses tensorflow serving for service. The use of tensorflow serving is as follows (take basic_score model as an example):
+1. docker pull tensorflow/serving 2. sudo docker run -p 8500:8500 -p 8501:8501 --name bsp_container -v /data/liujiawei/eilts_score/basic_score/SavedModel:/models/bsp -e MODEL_NAME=bsp -t tensorflow/serving & actual operation needs to load three tensorflow serving services, respectively enable basic score, coherence score and prompt-relevant score services 3. Check whether the started tensorflow serving service is successful: curl http://127.0.0.1:8501 /v1/models/bsp (take the bsp model as an example) 4. Start the bert-as-service third-party project and do encoding.
+
+##External call: The external project requests service for this project through grpc. When the request is sent externally, the project will send the articles in the request to the above three tensorflow serving services, and stitch the returned results with manual features, using pre-training The xgboost model solves the final
